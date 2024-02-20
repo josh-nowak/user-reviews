@@ -1,5 +1,5 @@
 import streamlit as st
-from src.utils import app_store_reviews, generate_wordcloud, build_prompt
+from src.utils import app_store_reviews, generate_wordcloud, create_rating_distribution_plot, build_prompt
 import datetime
 import pandas as pd
 
@@ -53,6 +53,9 @@ if st.session_state.reviews is not None:
     st.header("Most Common Words in Reviews")
     image = generate_wordcloud(st.session_state.reviews)
     st.image(image, caption="Word Cloud", use_column_width=True)
+    st.header("Distribution of Ratings")
+    fig = create_rating_distribution_plot(reviews)
+    st.plotly_chart(fig)
 
 if st.button("Create summary"):
     st.header("Summary of reviews")
