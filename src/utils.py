@@ -19,13 +19,9 @@ def app_data_from_url(url):
     return country, app_name, app_id
 
 
-def app_store_reviews(url: str, n_last_reviews: int, after: str = False):
+def app_store_reviews(url: str, n_last_reviews: int, after=False):
     country, app_name, app_id = app_data_from_url(url)
     app = AppStore(country=country, app_name=app_name, app_id=app_id)
-
-    if after:
-        after = datetime.strptime(after, "%Y-%m-%d")
-
     app.review(how_many=n_last_reviews, after=after)
     reviews = pd.DataFrame(app.reviews)
     reviews = reviews.loc[:, ["date", "title", "review", "rating"]]
