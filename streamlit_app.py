@@ -47,7 +47,20 @@ def get_reviews():
 if "reviews" not in st.session_state:
     st.session_state.reviews = None
 
-if st.button("Analyze reviews"):
+# Initialize session state for the "analyze" button to retain analysis
+if "clicked" not in st.session_state:
+    st.session_state.clicked = False
+
+
+def click_button():
+    if st.session_state.clicked:
+        pass
+    st.session_state.clicked = True
+
+
+st.button("Analyze reviews", type="primary", on_click=click_button)
+
+if st.session_state.clicked:
     with st.spinner("Loading reviews..."):
         if start_date and end_date:
             if start_date < end_date:
