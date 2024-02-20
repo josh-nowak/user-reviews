@@ -137,8 +137,8 @@ You can find the reviews below, along with their respective ratings, where 1/5 i
     return prompt
 
 
-def get_llm_summary(prompt: str, model: str = "gpt-3.5-turbo"):
-    client = OpenAI()
+def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
+    client = OpenAI(api_key=api_key)
     completion = client.chat.completions.create(
         model=model,
         messages=[

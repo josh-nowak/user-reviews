@@ -30,10 +30,12 @@ date_range = st.date_input(
     max_value=today,
     format="DD.MM.YYYY",
 )
-start_date = date_range[0].strftime("%Y-%m-%d")
 
+start_date = date_range[0].strftime("%Y-%m-%d")
 if len(date_range) > 1:
     end_date = date_range[1].strftime("%Y-%m-%d")
+
+api_key = st.text_input("Enter your OpenAI API key", type="password")
 
 
 def get_reviews():
@@ -64,5 +66,5 @@ if st.button("Analyze reviews"):
 
     st.header("Summary of reviews")
     prompt = build_prompt(st.session_state.reviews)
-    summary = get_llm_summary(prompt)
+    summary = get_llm_summary(prompt, api_key)
     st.markdown(summary)
