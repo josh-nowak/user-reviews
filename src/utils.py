@@ -79,3 +79,25 @@ def generate_wordcloud(data):
     image = Image.open(buf)
 
     return image
+
+
+def build_prompt(reviews=None):
+
+    prompt = """
+Please give a concise summary of the key points raised in the following app reviews. 
+You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
+
+"""
+
+    reviews["complete_info_for_prompting"] = (
+        "Review title: "
+        + reviews["title"]
+        + "\nReview rating: "
+        + reviews["rating"].astype("str")
+        + "/5"
+        "\nReview text: " + reviews["review"] + "\n\n"
+    )
+
+    prompt += reviews["complete_info_for_prompting"].sum()
+
+    return prompt
