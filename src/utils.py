@@ -108,7 +108,7 @@ def create_rating_distribution_plot(reviews):
         plot_bgcolor="rgba(0,0,0,0)",  # Transparent plot background
         paper_bgcolor="rgba(0,0,0,0)",  # Transparent paper background
         font=dict(size=12, color="Yellow"),  # Update font style and color
-        title_font=dict(size=20, color="Yellow"),  # Update title font style and color
+        # title_font=dict(size=20, color="Yellow"),  # Update title font style and color
     )
 
     return fig
