@@ -91,7 +91,7 @@ if st.session_state.clicked:
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
     prompt = build_prompt(
-        st.session_state.reviews[st.session_state.reviews["rating"] > 3]
+        st.session_state.reviews[st.session_state.reviews["rating"] > 3].sample(frac=1)
     )
     prompt += "\n\nFor this analysis, only the positive reviews have been selected. \
         Please summarize the positive highlights in the user feedback."
@@ -110,7 +110,7 @@ if st.session_state.clicked:
     # Generate "room for improvement" section
     st.subheader("🤔 Room for improvement")
     prompt = build_prompt(
-        st.session_state.reviews[st.session_state.reviews["rating"] < 4]
+        st.session_state.reviews[st.session_state.reviews["rating"] < 4].sample(frac=1)
     )
     prompt += "\n\nFor this analysis, only critical reviews have been selected. \
     Please summarize the key critical issues raised in the user feedback."
