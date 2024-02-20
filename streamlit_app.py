@@ -15,12 +15,12 @@ st.markdown(
 )
 
 today = datetime.datetime.now()
-jan_1 = datetime.date(today.year, 1, 1)
+default_start_date = datetime.date(today.year - 1, 1, 1)
 
 
 date_range = st.date_input(
     "Date range",
-    value=(jan_1, today),
+    value=(default_start_date, today),
     max_value=today,
     format="DD.MM.YYYY",
 )
@@ -42,10 +42,8 @@ if st.button("Get reviews"):
     if start_date and end_date:
         if start_date < end_date:
             reviews = get_reviews()
+            st.header("Reviews")
             st.dataframe(reviews)
-            st.markdown(
-                "*For now, this app only shows the reviews without any analysis.*"
-            )
 
     st.header("Most Common Words in Reviews")
 
