@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import io
 from PIL import Image
 import plotly.express as px
+from openai import OpenAI
+
 
 def app_data_from_url(url):
     pattern = r".*apps.apple.com/(?P<country>[a-z]{2})/app/(?P<app_name>[^/]+)/id(?P<app_id>\d+)"
@@ -80,34 +82,43 @@ def generate_wordcloud(data):
 
     return image
 
+
 def create_rating_distribution_plot(reviews):
     # Count the occurrences of each rating
-    rating_counts = reviews['rating'].value_counts().reset_index()
-    rating_counts.columns = ['rating', 'count']
+    rating_counts = reviews["rating"].value_counts().reset_index()
+    rating_counts.columns = ["rating", "count"]
 
     # Ensure we have all ratings from 1 to 5, even if some are missing in the data
-    all_ratings = pd.DataFrame({'rating': range(1, 6)})
-    rating_counts = pd.merge(all_ratings, rating_counts, on='rating', how='left').fillna(0)
+    all_ratings = pd.DataFrame({"rating": range(1, 6)})
+    rating_counts = pd.merge(
+        all_ratings, rating_counts, on="rating", how="left"
+    ).fillna(0)
 
     # Create a bar plot with white bars
-    fig = px.bar(rating_counts, x='rating', y='count', title="Distribution of User Ratings",
-                 labels={'count': 'Count', 'rating': 'Rating'},  # Customizing axis labels
-                 color_discrete_sequence=['white'] * len(rating_counts))  # Making bars white
+    fig = px.bar(
+        rating_counts,
+        x="rating",
+        y="count",
+        title="Distribution of User Ratings",
+        labels={"count": "Count", "rating": "Rating"},  # Customizing axis labels
+        color_discrete_sequence=["white"] * len(rating_counts),
+    )  # Making bars white
 
     # Update layout for aesthetics
     fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent paper background
+        plot_bgcolor="rgba(0,0,0,0)",  # Transparent plot background
+        paper_bgcolor="rgba(0,0,0,0)",  # Transparent paper background
         font=dict(size=12, color="Yellow"),  # Update font style and color
         title_font=dict(size=20, color="Yellow"),  # Update title font style and color
     )
 
     return fig
 
+
 def build_prompt(reviews=None):
 
     prompt = """
-Please give a concise summary of the key points raised in the following app reviews. 
+Please synthesize the key points from the following app store reviews into one single summary. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
 
 """
@@ -124,3 +135,18 @@ You can find the reviews below, along with their respective ratings, where 1/5 i
     prompt += reviews["complete_info_for_prompting"].sum()
 
     return prompt
+
+
+def get_llm_summary(prompt: str, model: str = "gpt-3.5-turbo"):
+    client = OpenAI()
+    completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert user researcher, skilled in summarizing and explaining user feedback.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+    )
+    return completion.choices[0].message.content

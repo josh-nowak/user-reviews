@@ -1,5 +1,11 @@
 import streamlit as st
-from src.utils import app_store_reviews, generate_wordcloud, create_rating_distribution_plot, build_prompt
+from src.utils import (
+    app_store_reviews,
+    generate_wordcloud,
+    create_rating_distribution_plot,
+    build_prompt,
+    get_llm_summary,
+)
 import datetime
 import pandas as pd
 
@@ -36,19 +42,19 @@ def get_reviews():
     )
     return reviews
 
+
 # Initialize session state for reviews if it doesn't exist
 if "reviews" not in st.session_state:
     st.session_state.reviews = None
 
-if st.button("Get reviews"):
-
+if st.button("Analyze reviews"):
     if start_date and end_date:
         if start_date < end_date:
             st.session_state.reviews = get_reviews()  # Store reviews in session state
-            st.header("Reviews")
-            st.dataframe(st.session_state.reviews)
 
-if st.session_state.reviews is not None:
+    st.header("Reviews")
+    st.dataframe(st.session_state.reviews)
+
     st.header("Most Common Words in Reviews")
     image = generate_wordcloud(st.session_state.reviews)
     st.image(image, caption="Word Cloud", use_column_width=True)
@@ -56,7 +62,7 @@ if st.session_state.reviews is not None:
     fig = create_rating_distribution_plot(st.session_state.reviews)
     st.plotly_chart(fig)
 
-if st.button("Create summary"):
     st.header("Summary of reviews")
     prompt = build_prompt(st.session_state.reviews)
-    st.write(prompt)
+    summary = get_llm_summary(prompt)
+    st.markdown(summary)
