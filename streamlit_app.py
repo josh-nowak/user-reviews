@@ -26,7 +26,9 @@ if st.button("Get reviews"):
     st.markdown("*For now, this app only shows the reviews without any analysis.*")
 
     def get_reviews():
-        return app_store_reviews(url=app_store_url, n_last_reviews=n_last_reviews)
+        return app_store_reviews(
+            url=app_store_url, n_last_reviews=n_last_reviews, after=after_date
+        )
 
     reviews = get_reviews()
 
