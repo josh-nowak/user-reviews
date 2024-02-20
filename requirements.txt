@@ -1,3 +1,5 @@
 streamlit
 pandas
 app_store_scraper
+wordcloud
+matplotlib
