@@ -36,7 +36,6 @@ def get_reviews():
     )
     return reviews
 
-
 # Initialize session state for reviews if it doesn't exist
 if "reviews" not in st.session_state:
     st.session_state.reviews = None
@@ -54,7 +53,7 @@ if st.session_state.reviews is not None:
     image = generate_wordcloud(st.session_state.reviews)
     st.image(image, caption="Word Cloud", use_column_width=True)
     st.header("Distribution of Ratings")
-    fig = create_rating_distribution_plot(reviews)
+    fig = create_rating_distribution_plot(st.session_state.reviews)
     st.plotly_chart(fig)
 
 if st.button("Create summary"):
