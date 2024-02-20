@@ -99,7 +99,6 @@ def create_rating_distribution_plot(reviews):
         rating_counts,
         x="rating",
         y="count",
-        title="Distribution of User Ratings",
         labels={"count": "Count", "rating": "Rating"},  # Customizing axis labels
         color_discrete_sequence=["white"] * len(rating_counts),
     )  # Making bars white
@@ -118,7 +117,8 @@ def create_rating_distribution_plot(reviews):
 def build_prompt(reviews=None):
 
     prompt = """
-Please synthesize the key points from the following app store reviews into one single summary. 
+Synthesize the key points from the following app store reviews into one single summary using bullet points. 
+Create between 3 and 10 bullet points in order to mention only the most important and frequent feedback. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
 
 """
