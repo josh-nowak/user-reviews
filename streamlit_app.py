@@ -32,10 +32,7 @@ if st.session_state.use_test_data:
     st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
 
 # Date selection
-@st.cache_resource
-def get_today():
-    return datetime.datetime.now()
-today = get_today()
+today = datetime.datetime.now()
 default_start_date = datetime.date(today.year, 1, 1)
 date_range = st.date_input(
     "Set a **date range** for reviews to analyze",
