@@ -38,7 +38,7 @@ date_range = st.date_input(
     "Set a **date range** for reviews to analyze",
     value=(default_start_date, today),
     max_value=today,
-    format="DD.MM.YYYY",
+    # format="DD.MM.YYYY", # not included in older streamlit versions
 )
 start_date = date_range[0].strftime("%Y-%m-%d")
 if len(date_range) > 1:
