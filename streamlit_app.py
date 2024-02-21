@@ -5,6 +5,7 @@ from src.utils import (
     create_rating_distribution_plot,
     build_prompt,
     get_llm_summary,
+    get_llm_recommendations,
     app_data_from_url,
     count_tokens,
     estimate_token_cost
@@ -14,8 +15,13 @@ import pandas as pd
 
 st.title("App Store Review Summary")
 
+# Initialize session states
+if "reviews" not in st.session_state:
+    st.session_state.reviews = None
 if "use_test_data" not in st.session_state:
     st.session_state.use_test_data = False
+if "app_store_url" not in st.session_state:
+    st.session_state.app_store_url = None
 
 # App selection
 app_store_url = st.text_input(
@@ -29,6 +35,13 @@ st.checkbox("Use demo data instead (60 reviews of the Slack App)",
             key="use_test_data")
 if st.session_state.use_test_data:
     st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
+    demo_url = "https://apps.apple.com/de/app/slack/id618783545"
+    st.session_state.app_store_url = demo_url
+
+if not st.session_state.use_test_data:
+    st.session_state.reviews = None
+    st.session_state.app_store_url = app_store_url
+
 
 # Date selection
 today = datetime.datetime.now()
@@ -68,9 +81,7 @@ def get_reviews():
     )
     return reviews
 
-# Initialize session state for reviews if it doesn't exist
-if "reviews" not in st.session_state:
-    st.session_state.reviews = None
+
 
 # Initialize session states for the buttons to use them across scopes
 if "clicked_load" not in st.session_state:
@@ -153,7 +164,7 @@ if st.session_state.clicked_analysis:
     st.markdown("---")
 
     # Generate an introductory text for the analysis
-    country, app_name, app_id = app_data_from_url(app_store_url)
+    country, app_name, app_id = app_data_from_url(st.session_state.app_store_url)
     n_reviews_found = len(st.session_state.reviews)
     p_positive_reviews = len(
         st.session_state.reviews[st.session_state.reviews["rating"] > 3]
@@ -167,6 +178,7 @@ if st.session_state.clicked_analysis:
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
 
+    positive_summary = None
     if st.session_state.prompt_positive is not None:
         with st.spinner("Summarizing positive reviews..."):
             positive_summary = get_llm_summary(st.session_state.prompt_positive, api_key)
@@ -179,6 +191,7 @@ if st.session_state.clicked_analysis:
     # Generate "room for improvement" section
     st.subheader("🤔 Room for improvement")
 
+    negative_summary = None
     if st.session_state.prompt_negative is not None:
         with st.spinner("Summarizing negative reviews..."):
             negative_summary = get_llm_summary(st.session_state.prompt_negative, api_key)
@@ -187,10 +200,25 @@ if st.session_state.clicked_analysis:
     else:
         st.write("No negative reviews (< 4 stars) were found. A summary cannot be created.")
 
-    # Show rating distribution
-    st.subheader("Rating distribution")
-    fig = create_rating_distribution_plot(st.session_state.reviews)
-    st.plotly_chart(fig)
 
-    image = generate_wordcloud(st.session_state.reviews)
-    st.image(image, caption="Word Cloud", use_column_width=True)
+    # Generate "recommendations" section
+    st.subheader("🧭 Recommended improvements")
+
+    summaries = [positive_summary, negative_summary]
+
+    if positive_summary is not None or negative_summary is not None:
+        with st.spinner("Generating recommendations..."):
+            recommendations = get_llm_recommendations(summaries=summaries,
+                                api_key=api_key,
+                                app_name=app_name,
+                                model=model_name)
+        st.write(recommendations)
+    else:
+        st.write("No reviews were found.")
+
+    # st.subheader("Rating distribution")
+    # fig = create_rating_distribution_plot(st.session_state.reviews)
+    # st.plotly_chart(fig)
+
+    # image = generate_wordcloud(st.session_state.reviews)
+    # st.image(image, caption="Word Cloud", use_column_width=True)

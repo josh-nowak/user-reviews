@@ -124,7 +124,7 @@ def create_rating_distribution_plot(reviews):
 def build_prompt(reviews=None):
 
     prompt = """
-Synthesize the key points from the following app store reviews into one single summary using bullet points. 
+Synthesize the key points from the following app store reviews into one single summary in English language using bullet points. 
 Create between 3 and 10 bullet points in order to mention only the most important and frequent feedback. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
 
@@ -152,6 +152,31 @@ def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
             {
                 "role": "system",
                 "content": "You are an expert user researcher, skilled in summarizing and explaining user feedback.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+    )
+    return completion.choices[0].message.content
+
+def get_llm_recommendations(summaries: list, api_key: str, app_name: str, model: str = "gpt-3.5-turbo"):
+    client = OpenAI(api_key=api_key)
+
+    prompt = f"Below you will find summarized user feedback for the \
+        app {app_name} based on App Store reviews. Suggest concrete improvements to improve \
+            the app based on this feedback, using 3 to 10 bullet points. \n\n"
+
+    for summary in summaries:
+        if summary is None:
+            next()
+        prompt += summary + "\n\n"
+
+    completion = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert user researcher, skilled in providing\
+                      actionable product recommendations based on user feedback.",
             },
             {"role": "user", "content": prompt},
         ],
