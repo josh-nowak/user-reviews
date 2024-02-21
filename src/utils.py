@@ -25,7 +25,7 @@ def app_data_from_url(url):
 
 
 def app_store_reviews(
-    url: str, n_last_reviews: int = 1e6, start_date: str = None, end_date: str = None
+    url: str, n_last_reviews: int = 100, start_date: str = None, end_date: str = None
 ):
 
     # Create AppStore object based on URL
