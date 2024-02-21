@@ -144,8 +144,14 @@ You can find the reviews below, along with their respective ratings, where 1/5 i
     return prompt
 
 
-def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
-    client = OpenAI(api_key=api_key)
+def get_llm_summary(prompt: str, api_key: str = None, model: str = "gpt-3.5-turbo"):
+    if api_key is None and model == "gpt-3.5-turbo":
+        client = OpenAI() # use environment variable
+    elif api_key is None and model != "gpt-3.5-turbo":
+        raise ValueError("Please provide an OpenAI API key.")
+    else:
+        client = OpenAI(api_key=api_key)
+
     completion = client.chat.completions.create(
         model=model,
         messages=[
@@ -158,8 +164,13 @@ def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
     )
     return completion.choices[0].message.content
 
-def get_llm_recommendations(summaries: list, api_key: str, app_name: str, model: str = "gpt-3.5-turbo"):
-    client = OpenAI(api_key=api_key)
+def get_llm_recommendations(summaries: list, app_name: str, api_key: str = None, model: str = "gpt-3.5-turbo"):
+    if api_key is None and model == "gpt-3.5-turbo":
+        client = OpenAI() # use environment variable
+    elif api_key is None and model != "gpt-3.5-turbo":
+        raise ValueError("Please provide an OpenAI API key.")
+    else:
+        client = OpenAI(api_key=api_key)
 
     prompt = f"Below you will find summarized user feedback for the \
         app {app_name} based on App Store reviews. Suggest concrete improvements to improve \

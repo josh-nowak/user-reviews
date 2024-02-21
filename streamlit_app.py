@@ -13,7 +13,7 @@ from src.utils import (
 import datetime
 import pandas as pd
 
-st.title("App Store Review Summarization")
+st.title("App Store Review Summarization 📱")
 
 # Initialize session states
 if "reviews" not in st.session_state:
@@ -22,6 +22,23 @@ if "use_test_data" not in st.session_state:
     st.session_state.use_test_data = False
 if "app_store_url" not in st.session_state:
     st.session_state.app_store_url = None
+
+st.markdown("This tool **summarizes user reviews for any\
+            app in the Apple App Store**. It's targeted at \
+            developers and product people looking to improve their apps.")
+st.markdown("""
+The tool will generate:   
+* 🤩 **Users' highlights**: Aspects that users like about the app, based on positive reviews.
+* 🤔 **Users' problems**: Issues that users are facing using the app, based on negative reviews.
+* 🧭 **Recommendations**: Specific ways to improve the app that might inform your product roadmap.
+""")
+st.markdown("---")
+
+st.subheader("Which app would you like to analyze?")
+if st.session_state.use_test_data:
+    st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
+    demo_url = "https://apps.apple.com/de/app/slack/id618783545"
+    st.session_state.app_store_url = demo_url
 
 # App selection
 app_store_url = st.text_input(
@@ -34,7 +51,7 @@ app_store_url = st.text_input(
 today = datetime.datetime.now()
 default_start_date = datetime.date(today.year, 1, 1)
 date_range = st.date_input(
-    "Set a **date range** for reviews to analyze",
+    "Set a **date range** for reviews to include in the analysis",
     value=(default_start_date, today),
     max_value=today,
     format="DD.MM.YYYY", # not included in older streamlit versions
@@ -49,29 +66,27 @@ if len(date_range) > 1:
     end_date = date_range[1].strftime("%Y-%m-%d")
 
 # Allow users to use test dataset
-st.checkbox("Use demo data instead (60 reviews of the Slack App)",
+st.checkbox("Use **demo data** (60 recent reviews of the Slack App)",
             key="use_test_data")
-if st.session_state.use_test_data:
-    st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
-    demo_url = "https://apps.apple.com/de/app/slack/id618783545"
-    st.session_state.app_store_url = demo_url
-
 if not st.session_state.use_test_data:
     st.session_state.reviews = None
     st.session_state.app_store_url = app_store_url
 
 # Model selection
-model_name = st.radio("Select the LLM to be used for summarization",
+model_name = st.radio("Select a **model** to be used for summarization",
                     options=["gpt-3.5-turbo",
                   "gpt-4-0125-preview"],
                 # captions are only included in newer versions of streamlit
                   captions=["Faster and low-cost",
-                            "More thorough and higher-cost"]
+                            "Higher-quality and higher-cost"]
                 ) 
 
 # API key 
-api_key = st.text_input("Enter your OpenAI API key",
+api_key_input = st.text_input("Enter your OpenAI API key",
                         type="password")
+
+if len(api_key_input) == 0 and model_name != "gpt-3.5-turbo":
+    st.warning("When selecting GPT-4, an API key needs to be provided.")
 
 # Function for scraping reviews
 def get_reviews():
@@ -185,10 +200,15 @@ if st.session_state.clicked_analysis:
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
 
+    if len(api_key_input) == 0:
+        api_key = None
+
     positive_summary = None
     if st.session_state.prompt_positive is not None:
         with st.spinner("Summarizing positive reviews..."):
-            positive_summary = get_llm_summary(st.session_state.prompt_positive, api_key)
+            positive_summary = get_llm_summary(st.session_state.prompt_positive,
+                                               api_key=api_key,
+                                               model=model_name)
         st.write("The following points were highlighted by satisfied users:")
         st.write(positive_summary)
     else:
@@ -196,12 +216,14 @@ if st.session_state.clicked_analysis:
 
 
     # Generate "room for improvement" section
-    st.subheader("🤔 Room for improvement")
+    st.subheader("🤔 Problems")
 
     negative_summary = None
     if st.session_state.prompt_negative is not None:
         with st.spinner("Summarizing negative reviews..."):
-            negative_summary = get_llm_summary(st.session_state.prompt_negative, api_key)
+            negative_summary = get_llm_summary(st.session_state.prompt_negative,
+                                               api_key=api_key,
+                                               model=model_name)
         st.write("The following issues were raised by dissatisfied users:")
         st.write(negative_summary)
     else:
