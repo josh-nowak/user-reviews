@@ -1,8 +1,6 @@
 import streamlit as st
 from src.utils import (
     app_store_reviews,
-    generate_wordcloud,
-    create_rating_distribution_plot,
     build_prompt,
     get_llm_summary,
     get_llm_recommendations,
@@ -274,10 +272,3 @@ if st.session_state.stage == 3:
         st.write(recommendations)
     else:
         st.write("No reviews were found.")
-
-    # st.subheader("Rating distribution")
-    # fig = create_rating_distribution_plot(st.session_state.reviews)
-    # st.plotly_chart(fig)
-
-    # image = generate_wordcloud(st.session_state.reviews)
-    # st.image(image, caption="Word Cloud", use_column_width=True)
