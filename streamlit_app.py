@@ -23,17 +23,6 @@ if "use_test_data" not in st.session_state:
 if "app_store_url" not in st.session_state:
     st.session_state.app_store_url = None
 
-st.markdown("This tool **summarizes user reviews for any\
-            app in the Apple App Store**. It's targeted at \
-            developers and product people looking to improve their apps.")
-st.markdown("""
-The tool will generate:   
-* 🤩 **Users' highlights**: Aspects that users like about the app, based on positive reviews.
-* 🤔 **Users' problems**: Issues that users are facing using the app, based on negative reviews.
-* 🧭 **Recommendations**: Specific ways to improve the app that might inform your product roadmap.
-""")
-st.markdown("---")
-
 st.subheader("Which app would you like to analyze?")
 if st.session_state.use_test_data:
     st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
@@ -66,29 +55,29 @@ if len(date_range) > 1:
     end_date = date_range[1].strftime("%Y-%m-%d")
 
 # Allow users to use test dataset
-st.checkbox("Use **demo data** (60 recent reviews of the Slack App)",
+st.checkbox("Use **demo data** instead (60 recent reviews of the Slack App)",
             key="use_test_data")
 if not st.session_state.use_test_data:
     st.session_state.reviews = None
     st.session_state.app_store_url = app_store_url
 
 # Model selection
-st.subheader("Which language model would you like to use?")
-model_name = st.radio("Select a **model** to be used for summarization",
-                    options=["gpt-3.5-turbo",
-                  "gpt-4-0125-preview"],
-                # captions are only included in newer versions of streamlit
-                  captions=["Faster and low-cost",
-                            "Higher-quality and higher-cost"]
-                ) 
+with st.expander("Advanced options for LLM specification"):
+    model_name = st.radio("Select a **model** to be used for summarization",
+                        options=["gpt-3.5-turbo",
+                    "gpt-4-0125-preview"],
+                    # captions are only included in newer versions of streamlit
+                    captions=["Faster and low-cost",
+                                "Higher-quality and higher-cost"]
+                    ) 
 
-st.write("When using GPT 3.5, entering an API key is not required but appreciated.")
-# API key 
-api_key_input = st.text_input("Enter your OpenAI API key",
-                        type="password")
-
-if len(api_key_input) == 0 and model_name != "gpt-3.5-turbo":
-    st.error("When selecting GPT-4, an API key needs to be provided.")
+    # API key 
+    api_key_input = st.text_input("Enter your OpenAI API key",
+                            type="password")
+    if model_name == "gpt-3.5-turbo":
+        st.info("When selecting **GPT 3.5**, entering your own API key is **not required**.")
+    elif len(api_key_input) == 0 and model_name != "gpt-3.5-turbo":
+        st.error("When selecting **GPT-4**, an API key **needs to be provided**.")
 
 # Function for scraping reviews
 def get_reviews():

@@ -1,2 +1,3 @@
-# user-reviews
-Building an app to analyze user reviews
+# App Store review summarization tool
+
+This is a tool for 
