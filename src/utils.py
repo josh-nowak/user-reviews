@@ -127,6 +127,7 @@ def build_prompt(reviews=None):
 Synthesize the key points from the following app store reviews into one single summary in English language using bullet points. 
 Create between 3 and 5 bullet points in order to mention only the most important and frequent feedback. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
+Output only the bullet points and nothing else. Each bullet point should contain 2-3 sentences.
 
 """
 
@@ -173,12 +174,13 @@ def get_llm_recommendations(summaries: list, app_name: str, api_key: str = None,
         client = OpenAI(api_key=api_key)
 
     prompt = f"Below you will find summarized user feedback for the \
-        app {app_name} based on App Store reviews. Suggest concrete improvements to improve \
-            the app based on this feedback, using 3 to 5 bullet points. \n\n"
+            app {app_name} based on App Store reviews. Suggest concrete improvements to improve \
+            the app based on this feedback, using 3 to 5 bullet points. Output only the bullet points and nothing else.\
+                 Each bullet point should contain 2-3 sentences. \n\n"
 
     for summary in summaries:
         if summary is None:
-            next()
+            continue
         prompt += summary + "\n\n"
 
     completion = client.chat.completions.create(

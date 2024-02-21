@@ -13,7 +13,7 @@ from src.utils import (
 import datetime
 import pandas as pd
 
-st.title("App Store Review Summarization 📱")
+st.title("App Review Summaries 📱")
 
 # Initialize session states
 if "reviews" not in st.session_state:
@@ -23,13 +23,8 @@ if "use_test_data" not in st.session_state:
 if "app_store_url" not in st.session_state:
     st.session_state.app_store_url = None
 
-st.subheader("Which app would you like to analyze?")
-if st.session_state.use_test_data:
-    st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
-    demo_url = "https://apps.apple.com/de/app/slack/id618783545"
-    st.session_state.app_store_url = demo_url
-
 # App selection
+st.subheader("Which app would you like to analyze?")
 app_store_url = st.text_input(
     "Enter an **App Store URL**",
     placeholder="https://apps.apple.com/...",
@@ -45,8 +40,8 @@ date_range = st.date_input(
     max_value=today,
     format="DD.MM.YYYY", # not included in older streamlit versions
     disabled=st.session_state.use_test_data,
-    help = "Note: Only the last 100 reviews can be downloaded, since \
-            excessive scraping is blocked by Apple. \
+    help = "A maximum of 100 reviews will be downloaded in order \
+            to prevent excessive scraping. \
             You can further constrain this limit with the date range, \
             but not extend it."
 )
@@ -57,6 +52,10 @@ if len(date_range) > 1:
 # Allow users to use test dataset
 st.checkbox("Use **demo data** instead (60 recent reviews of the Slack App)",
             key="use_test_data")
+
+if st.session_state.use_test_data:
+    demo_url = "https://apps.apple.com/de/app/slack/id618783545"
+    st.session_state.app_store_url = demo_url
 if not st.session_state.use_test_data:
     st.session_state.reviews = None
     st.session_state.app_store_url = app_store_url
@@ -77,7 +76,13 @@ with st.expander("Advanced options for LLM specification"):
     if model_name == "gpt-3.5-turbo":
         st.info("When selecting **GPT 3.5**, entering your own API key is **not required**.")
     elif len(api_key_input) == 0 and model_name != "gpt-3.5-turbo":
-        st.error("When selecting **GPT-4**, an API key **needs to be provided**.")
+        st.warning("When selecting **GPT-4**, an API key **needs to be provided**. \
+                 You will receive a cost estimate before any API calls are made.")
+
+if len(api_key_input) == 0:
+    api_key = None
+else:
+    api_key = api_key_input
 
 # Function for scraping reviews
 def get_reviews():
@@ -86,13 +91,18 @@ def get_reviews():
     )
     return reviews
 
-
-
 # Initialize session states for the buttons to use them across scopes
-if "clicked_load" not in st.session_state:
-    st.session_state.clicked_load = False
-if "clicked_analysis" not in st.session_state:
-    st.session_state.clicked_analysis = False
+# if "clicked_load" not in st.session_state:
+#     st.session_state.clicked_load = False
+# if "clicked_analysis" not in st.session_state:
+#     st.session_state.clicked_analysis = False
+
+# Alternative approach
+if "stage" not in st.session_state:
+    st.session_state.stage = 0
+
+def set_stage(i):
+    st.session_state.stage = i
 
 # Initialize session states for the prompts
 if "prompt_positive" not in st.session_state:
@@ -101,26 +111,25 @@ if "prompt_negative" not in st.session_state:
     st.session_state.prompt_negative = None
 
 # Main CTA: Load reviews
-if st.button("Load reviews", type="primary"):
-    st.session_state.clicked_load = True
+st.button("Load reviews", type="primary", on_click=set_stage, args = [1])
 
 
-# Perform general preparation (data loading and prompt generation) when
-    # any button is clicked
-if st.session_state.clicked_load:
+###################
+# DATA LOADING
+###################
 
-    # Load reviews
+if st.session_state.stage == 1:
+    # Load reviews if not already done
     if st.session_state.reviews is None:
-        with st.spinner("Loading reviews..."):
-            if start_date and end_date:
-                if start_date < end_date:
-                    # Store reviews in session state
-                    st.session_state.reviews = get_reviews()
-        print("len", len(st.session_state.reviews))
-
-        # Show a success message
+        if st.session_state.use_test_data:
+             st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
+        else:
+            with st.spinner("Loading reviews... (this may take a while!)"):
+                if start_date and end_date:
+                    if start_date < end_date:
+                        # Store reviews in session state
+                        st.session_state.reviews = get_reviews()
         st.toast(f"🎉 Reviews successfully loaded!")
-
 
     positive_reviews = st.session_state.reviews[st.session_state.reviews["rating"] > 3].sample(frac=1)
     negative_reviews = st.session_state.reviews[st.session_state.reviews["rating"] < 4].sample(frac=1)
@@ -139,6 +148,19 @@ if st.session_state.clicked_load:
         )
         st.session_state.prompt_negative += "\n\nFor this analysis, only critical reviews have been selected. \
         Please summarize the key critical issues raised in the user feedback."
+    
+    # If user provided an API key, move on to cost estimation
+    if api_key is not None:
+        set_stage(2)
+    # If user provided no API key, skip straight to analysis
+    else:
+        set_stage(3)
+
+###################
+# API COST ESTIMATE
+###################
+
+if st.session_state.stage > 1 and api_key is not None:
     
     # Estimate input token amount and API cost
     input_token_count_total = 0
@@ -163,19 +185,26 @@ if st.session_state.clicked_load:
 
     # Display cost estimation to user
     st.markdown(f"{len(st.session_state.reviews)} reviews were downloaded, resulting in\
-                 a total of {input_token_count_total} input tokens. Find the retrieved reviews below.")
+                 a total of {input_token_count_total} input tokens for the prompts. Find the retrieved reviews below.")
     st.dataframe(st.session_state.reviews)
     st.markdown(f"Creating summaries with `{model_name}` would cost you approximately\
-                 **${round(token_cost, 2)}**. You can decrease the date range to decrease the cost.")
-    st.markdown("**Would you like to continue the analysis, using your OpenAI API budget?**")
+                 **${round(token_cost, 2)}**, accounting both input and output tokens.\
+                      You can decrease the date range to limit the amount of reviews and decrease the cost.")
+    st.markdown("**Would you like to continue the analysis, using your OpenAI API credits?**")
 
-    if st.button("Yes, continue analysis", type="primary"):
-        st.session_state.clicked_analysis = True
+    st.button("Yes, continue analysis", type="primary", on_click=set_stage, args=[3])
 
-# Perform analysis when button is clicked
-if st.session_state.clicked_analysis:
+
+###################
+# SUMMARIZATION
+###################
+        
+if st.session_state.stage == 3:
     st.markdown("---")
 
+    if st.session_state.reviews is None:
+        raise LookupError("Can't find the reviews anymore!!")
+    
     # Generate an introductory text for the analysis
     country, app_name, app_id = app_data_from_url(st.session_state.app_store_url)
     n_reviews_found = len(st.session_state.reviews)
@@ -185,23 +214,17 @@ if st.session_state.clicked_analysis:
     intro_text = f'The App **"{app_name.capitalize()}"** received **{n_reviews_found} App Store reviews** in the \
         selected time frame. About **{round(p_positive_reviews*100)}% of these \
             reviews were positive**, with a rating 4 or 5 stars.'
-    # Display the intro text
     st.write(intro_text)
 
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
 
-    if len(api_key_input) == 0:
-        api_key = None
-    else:
-        api_key = api_key_input
-
     positive_summary = None
     if st.session_state.prompt_positive is not None:
         with st.spinner("Summarizing positive reviews..."):
             positive_summary = get_llm_summary(st.session_state.prompt_positive,
-                                               api_key=api_key,
-                                               model=model_name)
+                                            api_key=api_key,
+                                            model=model_name)
         st.write("The following points were highlighted by satisfied users:")
         st.write(positive_summary)
     else:
@@ -215,8 +238,8 @@ if st.session_state.clicked_analysis:
     if st.session_state.prompt_negative is not None:
         with st.spinner("Summarizing negative reviews..."):
             negative_summary = get_llm_summary(st.session_state.prompt_negative,
-                                               api_key=api_key,
-                                               model=model_name)
+                                            api_key=api_key,
+                                            model=model_name)
         st.write("The following issues were raised by dissatisfied users:")
         st.write(negative_summary)
     else:
@@ -225,7 +248,6 @@ if st.session_state.clicked_analysis:
 
     # Generate "recommendations" section
     st.subheader("🧭 Recommended improvements")
-
     summaries = [positive_summary, negative_summary]
 
     if positive_summary is not None or negative_summary is not None:
@@ -234,6 +256,7 @@ if st.session_state.clicked_analysis:
                                 api_key=api_key,
                                 app_name=app_name,
                                 model=model_name)
+        st.write("Based on the user feedback, consider the following product recommendations:")
         st.write(recommendations)
     else:
         st.write("No reviews were found.")
