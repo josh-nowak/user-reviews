@@ -8,6 +8,7 @@ import io
 from PIL import Image
 import plotly.express as px
 from openai import OpenAI
+import tiktoken
 
 
 def app_data_from_url(url):
@@ -150,3 +151,8 @@ def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
         ],
     )
     return completion.choices[0].message.content
+
+def count_tokens(prompt, model_name = "gpt-3.5-turbo"):
+    enc = tiktoken.encoding_for_model(model_name=model_name)
+    token_count = len(enc.encode(prompt))
+    return token_count
