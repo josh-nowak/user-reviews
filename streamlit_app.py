@@ -73,6 +73,7 @@ if not st.session_state.use_test_data:
     st.session_state.app_store_url = app_store_url
 
 # Model selection
+st.subheader("Which language model would you like to use?")
 model_name = st.radio("Select a **model** to be used for summarization",
                     options=["gpt-3.5-turbo",
                   "gpt-4-0125-preview"],
@@ -81,12 +82,13 @@ model_name = st.radio("Select a **model** to be used for summarization",
                             "Higher-quality and higher-cost"]
                 ) 
 
+st.write("When using GPT 3.5, entering an API key is not required but appreciated.")
 # API key 
 api_key_input = st.text_input("Enter your OpenAI API key",
                         type="password")
 
 if len(api_key_input) == 0 and model_name != "gpt-3.5-turbo":
-    st.warning("When selecting GPT-4, an API key needs to be provided.")
+    st.error("When selecting GPT-4, an API key needs to be provided.")
 
 # Function for scraping reviews
 def get_reviews():
