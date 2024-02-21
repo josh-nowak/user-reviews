@@ -14,12 +14,22 @@ import pandas as pd
 
 st.title("App Store Review Summary")
 
+if "use_test_data" not in st.session_state:
+    st.session_state.use_test_data = False
+
 # App selection
 app_store_url = st.text_input(
     "Enter an **App Store URL**",
     placeholder="https://apps.apple.com/...",
-    value = "https://apps.apple.com/de/app/slack/id618783545"
+    value = "https://apps.apple.com/de/app/slack/id618783545",
+    disabled=st.session_state.use_test_data
 )
+
+# Allow users to use test dataset
+st.checkbox("Use demo data instead (60 reviews of the Slack App)",
+            key="use_test_data")
+if st.session_state.use_test_data:
+    st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
 
 # Date selection
 today = datetime.datetime.now()
