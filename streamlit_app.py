@@ -66,8 +66,8 @@ with st.expander("Advanced options for LLM specification"):
                         options=["gpt-3.5-turbo",
                     "gpt-4-0125-preview"],
                     # captions are only included in newer versions of streamlit
-                    captions=["Faster and low-cost",
-                                "Higher-quality and higher-cost"]
+                    captions=["Faster and cheaper",
+                                "Higher-quality and more expensive"]
                     ) 
 
     # API key 
@@ -182,15 +182,23 @@ if st.session_state.stage > 1 and api_key is not None:
     token_cost = estimate_token_cost(input_token_count = input_token_count_total,
                                            output_token_count = output_token_count_total,
                                            model_name = model_name)
+    
+    if round(token_cost, 2) == 0:
+        token_cost_explanation = "less than $0.01"
+    else:
+        token_cost_explanation = f"roughly ${round(token_cost, 2):.2f}"
 
     # Display cost estimation to user
-    st.markdown(f"{len(st.session_state.reviews)} reviews were downloaded, resulting in\
-                 a total of {input_token_count_total} input tokens for the prompts. Find the retrieved reviews below.")
+    st.markdown(f"{len(st.session_state.reviews)} user reviews were loaded, find them below.")
+    
     st.dataframe(st.session_state.reviews)
-    st.markdown(f"Creating summaries with `{model_name}` would cost you approximately\
-                 **${round(token_cost, 2)}**, accounting both input and output tokens.\
-                      You can decrease the date range to limit the amount of reviews and decrease the cost.")
-    st.markdown("**Would you like to continue the analysis, using your OpenAI API credits?**")
+    
+    st.markdown(f"Creating summaries with `{model_name}` for all reviews would cost you\
+                 **{token_cost_explanation}**, accounting for both input and output tokens.")
+    
+    st.write("You can decrease the date range to limit the amount of reviews and lower the cost.")
+    
+    st.markdown(f"**Would you like to continue the analysis, using {token_cost_explanation} of your OpenAI API credits?**")
 
     st.button("Yes, continue analysis", type="primary", on_click=set_stage, args=[3])
 
@@ -211,10 +219,16 @@ if st.session_state.stage == 3:
     p_positive_reviews = len(
         st.session_state.reviews[st.session_state.reviews["rating"] > 3]
     ) / n_reviews_found
-    intro_text = f'The App **"{app_name.capitalize()}"** received **{n_reviews_found} App Store reviews** in the \
-        selected time frame. About **{round(p_positive_reviews*100)}% of these \
-            reviews were positive**, with a rating 4 or 5 stars.'
-    st.write(intro_text)
+
+    if n_reviews_found >= 100:
+        st.write(f'The App **"{app_name.capitalize()}"** received **{n_reviews_found} or more App Store reviews** in the \
+        selected time frame. (Additional reviews have not been loaded due to scraping limits.)')
+    else:
+        st.write(f'The App **"{app_name.capitalize()}"** received **{n_reviews_found} App Store reviews** in the \
+        selected time frame.')
+
+    st.write(f"About **{round(p_positive_reviews*100)}% of these \
+            reviews were positive**, with a rating 4 or 5 stars.")
 
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
