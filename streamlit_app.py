@@ -1,6 +1,7 @@
 import streamlit as st
 from src.utils import (
     app_store_reviews,
+    app_store_reviews_with_timeout,
     build_prompt,
     get_llm_summary,
     get_llm_recommendations,
@@ -85,23 +86,20 @@ else:
 # Function for scraping reviews
 @st.cache_data
 def get_reviews():
-    reviews = app_store_reviews(
+    reviews = app_store_reviews_with_timeout(
         url=app_store_url, start_date=start_date, end_date=end_date
     )
     return reviews
 
-# Initialize session states for the buttons to use them across scopes
-# if "clicked_load" not in st.session_state:
-#     st.session_state.clicked_load = False
-# if "clicked_analysis" not in st.session_state:
-#     st.session_state.clicked_analysis = False
-
-# Alternative approach
 if "stage" not in st.session_state:
     st.session_state.stage = 0
 
 def set_stage(i):
     st.session_state["stage"] = i
+    # STAGE LOGIC
+    # 0 — Initial state
+    # 1 — Inputs were given, user requested loading
+    # 2 — Loading completed,
 
 # Initialize session states for the prompts
 if "prompt_positive" not in st.session_state:
@@ -112,7 +110,6 @@ if "prompt_negative" not in st.session_state:
 # Main CTA: Load reviews
 st.button("Load reviews", type="primary", on_click=set_stage, args = [1])
 
-
 ###################
 # DATA LOADING
 ###################
@@ -120,14 +117,22 @@ st.button("Load reviews", type="primary", on_click=set_stage, args = [1])
 if st.session_state.stage > 0:
     # Load reviews if not already done
     if st.session_state.reviews is None:
+        # Read demo data
         if st.session_state.use_test_data:
              st.session_state.reviews = pd.read_csv("reviews_test_data.csv")
+        
+        # Scrape review data
         else:
             with st.spinner("Loading reviews... (this may take a while!)"):
                 if start_date and end_date:
                     if start_date < end_date:
                         # Store reviews in session state
                         st.session_state.reviews = get_reviews()
+
+        # If the user did not give an API key, proceed to analysis
+        # (Otherwise, the API cost estimation section will show first.)
+        if api_key is None:
+            st.session_state.stage = 2
 
     positive_reviews = st.session_state.reviews[st.session_state.reviews["rating"] > 3].sample(frac=1)
     negative_reviews = st.session_state.reviews[st.session_state.reviews["rating"] < 4].sample(frac=1)
@@ -192,7 +197,6 @@ if st.session_state.stage > 0 and api_key is not None:
     
     st.markdown(f"**Would you like to continue the analysis, using {token_cost_explanation} of your OpenAI API credits?**")
 
-    # PROBLEM HERE
     st.button("Yes, continue analysis", type="primary", on_click=set_stage, args=[2])
 
 

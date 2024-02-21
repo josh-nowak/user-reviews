@@ -9,6 +9,7 @@ from PIL import Image
 import plotly.express as px
 from openai import OpenAI
 import tiktoken
+import threading
 
 
 def app_data_from_url(url):
@@ -63,6 +64,65 @@ def app_store_reviews(
 
     # Sort by date
     reviews = reviews.sort_values(by="date", ascending=False)
+    return reviews
+
+def app_store_reviews_with_timeout(url: str, n_last_reviews: int = 100, start_date: str = None, end_date: str = None, timeout: int = 60):
+    # Placeholders for results and completion flag
+    reviews_list = []
+    completed = False
+    end_date_dt = datetime.now()
+    
+    def scrape_reviews():
+        nonlocal reviews_list, completed, end_date_dt
+
+        # Create AppStore object based on URL
+        country, app_name, app_id = app_data_from_url(url)
+        app = AppStore(country=country, app_name=app_name, app_id=app_id)
+
+        # Convert dates to datetime objects
+        if start_date:
+            start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        else:
+            start_date_dt = datetime.strptime("2000-01-01", "%Y-%m-%d")
+
+        if end_date:
+            end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        else:
+            end_date_dt = datetime.now()
+
+        # Scrape reviews for the specified App
+        app.review(how_many=n_last_reviews, after=start_date_dt)
+
+        # Store the scraped reviews
+        reviews_list = app.reviews
+        
+        # Mark completion
+        completed = True
+
+    # Start scraping in a separate thread
+    thread = threading.Thread(target=scrape_reviews)
+    thread.start()
+
+    # Wait for 30 seconds or until the thread finishes
+    thread.join(timeout=timeout)
+
+    if not completed:
+        raise TimeoutError(f"Review scraping did not complete within {timeout} seconds.")
+    
+    # Convert response to dataframe, assuming scraping was successful
+    reviews = pd.DataFrame(reviews_list)
+
+    # Throw an error if there are no reviews
+    if len(reviews) == 0:
+        raise FileExistsError("Couldn't load reviews. Either there are no \
+                            reviews existing in the specified date range \
+                            or Apple returned a 429 error (too many requests).")
+
+    # Final filtering and sorting
+    reviews = reviews.loc[:, ["date", "title", "review", "rating"]]
+    reviews = reviews[reviews["date"] < end_date_dt]
+    reviews = reviews.sort_values(by="date", ascending=False)
+
     return reviews
 
 
