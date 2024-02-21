@@ -38,7 +38,7 @@ date_range = st.date_input(
     "Set a **date range** for reviews to analyze",
     value=(default_start_date, today),
     max_value=today,
-    format="DD.MM.YYYY", # not included in older streamlit versions
+    # format="DD.MM.YYYY", # not included in older streamlit versions
 )
 start_date = date_range[0].strftime("%Y-%m-%d")
 if len(date_range) > 1:
@@ -53,8 +53,9 @@ st.markdown(":grey[Note: Only the last 100 reviews can be downloaded, since \
 model_name = st.radio("Select the LLM to be used for summarization",
                     options=["gpt-3.5-turbo",
                   "gpt-4-0125-preview"],
-                captions=["Faster and low-cost",
-                            "More thorough and higher-cost"]
+                # captions are only included in newer versions of streamlit
+                #   captions=["Faster and low-cost",
+                #             "More thorough and higher-cost"]
                 ) 
 
 # API key 
