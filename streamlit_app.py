@@ -13,7 +13,7 @@ from src.utils import (
 import datetime
 import pandas as pd
 
-st.title("App Store Review Summary")
+st.title("App Store Review Summarization")
 
 # Initialize session states
 if "reviews" not in st.session_state:
@@ -30,6 +30,24 @@ app_store_url = st.text_input(
     disabled=st.session_state.use_test_data
 )
 
+# Date selection
+today = datetime.datetime.now()
+default_start_date = datetime.date(today.year, 1, 1)
+date_range = st.date_input(
+    "Set a **date range** for reviews to analyze",
+    value=(default_start_date, today),
+    max_value=today,
+    format="DD.MM.YYYY", # not included in older streamlit versions
+    disabled=st.session_state.use_test_data,
+    help = "Note: Only the last 100 reviews can be downloaded, since \
+            excessive scraping is blocked by Apple. \
+            You can further constrain this limit with the date range, \
+            but not extend it."
+)
+start_date = date_range[0].strftime("%Y-%m-%d")
+if len(date_range) > 1:
+    end_date = date_range[1].strftime("%Y-%m-%d")
+
 # Allow users to use test dataset
 st.checkbox("Use demo data instead (60 reviews of the Slack App)",
             key="use_test_data")
@@ -41,25 +59,6 @@ if st.session_state.use_test_data:
 if not st.session_state.use_test_data:
     st.session_state.reviews = None
     st.session_state.app_store_url = app_store_url
-
-
-# Date selection
-today = datetime.datetime.now()
-default_start_date = datetime.date(today.year, 1, 1)
-date_range = st.date_input(
-    "Set a **date range** for reviews to analyze",
-    value=(default_start_date, today),
-    max_value=today,
-    format="DD.MM.YYYY", # not included in older streamlit versions
-)
-start_date = date_range[0].strftime("%Y-%m-%d")
-if len(date_range) > 1:
-    end_date = date_range[1].strftime("%Y-%m-%d")
-
-st.markdown(":grey[Note: Only the last 100 reviews can be downloaded, since \
-            excessive scraping is blocked by Apple. \
-            You can further constrain this limit with the date range, \
-            but not extend it.]")
 
 # Model selection
 model_name = st.radio("Select the LLM to be used for summarization",
@@ -137,15 +136,23 @@ if st.session_state.clicked_load:
     
     # Estimate input token amount and API cost
     input_token_count_total = 0
+    
+    # Add input token amount for summaries
     if st.session_state.prompt_positive is not None:
         input_token_count_prompt_positive = count_tokens(st.session_state.prompt_positive)
         input_token_count_total += input_token_count_prompt_positive
-    
     if st.session_state.prompt_negative is not None:
         input_token_count_prompt_negative = count_tokens(st.session_state.prompt_negative)
         input_token_count_total += input_token_count_prompt_negative
+    
+    # Add estimated input token amount for recommendations
+    input_token_count_total += 500 # heuristic value based on common summary outputs
 
-    input_token_cost = estimate_token_cost(token_count = input_token_count_total,
+    # Add estimated output token amount
+    output_token_count_total = 1000
+
+    token_cost = estimate_token_cost(input_token_count = input_token_count_total,
+                                           output_token_count = output_token_count_total,
                                            model_name = model_name)
 
     # Display cost estimation to user
@@ -153,7 +160,7 @@ if st.session_state.clicked_load:
                  a total of {input_token_count_total} input tokens. Find the retrieved reviews below.")
     st.dataframe(st.session_state.reviews)
     st.markdown(f"Creating summaries with `{model_name}` would cost you approximately\
-                 **${round(input_token_cost, 2)}**. You can decrease the date range to decrease the cost.")
+                 **${round(token_cost, 2)}**. You can decrease the date range to decrease the cost.")
     st.markdown("**Would you like to continue the analysis, using your OpenAI API budget?**")
 
     if st.button("Yes, continue analysis", type="primary"):

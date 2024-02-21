@@ -125,7 +125,7 @@ def build_prompt(reviews=None):
 
     prompt = """
 Synthesize the key points from the following app store reviews into one single summary in English language using bullet points. 
-Create between 3 and 10 bullet points in order to mention only the most important and frequent feedback. 
+Create between 3 and 5 bullet points in order to mention only the most important and frequent feedback. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
 
 """
@@ -163,7 +163,7 @@ def get_llm_recommendations(summaries: list, api_key: str, app_name: str, model:
 
     prompt = f"Below you will find summarized user feedback for the \
         app {app_name} based on App Store reviews. Suggest concrete improvements to improve \
-            the app based on this feedback, using 3 to 10 bullet points. \n\n"
+            the app based on this feedback, using 3 to 5 bullet points. \n\n"
 
     for summary in summaries:
         if summary is None:
@@ -188,11 +188,16 @@ def count_tokens(prompt):
     token_count = len(enc.encode(prompt))
     return token_count
 
-def estimate_token_cost(token_count, model_name = "gpt-3.5-turbo"):
+def estimate_token_cost(input_token_count,
+                        output_token_count,
+                        model_name = "gpt-3.5-turbo"):
+    
     if model_name == "gpt-3.5-turbo":
-        cost_estimate = token_count * 0.0005 / 1000
+        cost_estimate = input_token_count * 0.0005 / 1000
+        cost_estimate += output_token_count * 0.0015 / 1000
     elif model_name == "gpt-4-0125-preview":
-        cost_estimate = token_count * 0.01 / 1000
+        cost_estimate = input_token_count * 0.01 / 1000
+        cost_estimate += output_token_count * 0.06 / 1000
     else:
         raise ValueError(f"Model name {model_name} is unknown.")
     return cost_estimate
