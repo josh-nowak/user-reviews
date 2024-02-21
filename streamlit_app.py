@@ -81,12 +81,13 @@ if st.session_state.clicked:
             reviews were positive**, with a rating 4 or 5 stars.'
 
     # Give the introductory text a streaming (ChatGPT-like) effect
-    def stream_intro():
-        for word in intro_text.split():
-            yield word + " "
-            time.sleep(0.02)
+    # def stream_intro():
+    #     for word in intro_text.split():
+    #         yield word + " "
+    #         time.sleep(0.02)
+    # st.write_stream(stream_intro)
 
-    st.write_stream(stream_intro)
+    st.write(intro_text)
 
     # Generate "highlights" section
     st.subheader("🤩 Highlights")
