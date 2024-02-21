@@ -21,7 +21,6 @@ if "use_test_data" not in st.session_state:
 app_store_url = st.text_input(
     "Enter an **App Store URL**",
     placeholder="https://apps.apple.com/...",
-    value = "https://apps.apple.com/de/app/slack/id618783545",
     disabled=st.session_state.use_test_data
 )
 
@@ -106,7 +105,6 @@ if st.session_state.clicked_load:
         # Show a success message
         st.toast(f"🎉 Reviews successfully loaded!")
 
-    st.dataframe(st.session_state.reviews)
 
     positive_reviews = st.session_state.reviews[st.session_state.reviews["rating"] > 3].sample(frac=1)
     negative_reviews = st.session_state.reviews[st.session_state.reviews["rating"] < 4].sample(frac=1)
@@ -141,10 +139,11 @@ if st.session_state.clicked_load:
 
     # Display cost estimation to user
     st.markdown(f"{len(st.session_state.reviews)} reviews were downloaded, resulting in\
-                 a total of {input_token_count_total} input tokens.")
+                 a total of {input_token_count_total} input tokens. Find the retrieved reviews below.")
+    st.dataframe(st.session_state.reviews)
     st.markdown(f"Creating summaries with `{model_name}` would cost you approximately\
-                 ${round(input_token_cost, 2)}. You can decrease the date range to decrease the cost.")
-    st.markdown("**Would you like to continue the analysis?**")
+                 **${round(input_token_cost, 2)}**. You can decrease the date range to decrease the cost.")
+    st.markdown("**Would you like to continue the analysis and send requests to OpenAI?**")
 
     if st.button("Yes, continue analysis", type="primary"):
         st.session_state.clicked_analysis = True
@@ -195,6 +194,3 @@ if st.session_state.clicked_analysis:
 
     image = generate_wordcloud(st.session_state.reviews)
     st.image(image, caption="Word Cloud", use_column_width=True)
-
-    with st.expander("Inspect raw data"):
-        st.dataframe(st.session_state.reviews)
