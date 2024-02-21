@@ -143,7 +143,7 @@ if st.session_state.clicked_load:
     st.dataframe(st.session_state.reviews)
     st.markdown(f"Creating summaries with `{model_name}` would cost you approximately\
                  **${round(input_token_cost, 2)}**. You can decrease the date range to decrease the cost.")
-    st.markdown("**Would you like to continue the analysis and send requests to OpenAI?**")
+    st.markdown("**Would you like to continue the analysis, using your OpenAI API budget?**")
 
     if st.button("Yes, continue analysis", type="primary"):
         st.session_state.clicked_analysis = True
