@@ -127,7 +127,8 @@ def build_prompt(reviews=None):
 Synthesize the key points from the following app store reviews into one single summary in English language using bullet points. 
 Create between 3 and 5 bullet points in order to mention only the most important and frequent feedback. 
 You can find the reviews below, along with their respective ratings, where 1/5 is worst and 5/5 ist best.
-Output only the bullet points and nothing else. Each bullet point should contain 2-3 sentences.
+Output only the bullet points and nothing else. Each bullet point should contain at most 2 sentences.
+Use bolded text for important aspects to improve readability.
 
 """
 
@@ -176,7 +177,7 @@ def get_llm_recommendations(summaries: list, app_name: str, api_key: str = None,
     prompt = f"Below you will find summarized user feedback for the \
             app {app_name} based on App Store reviews. Suggest concrete improvements to improve \
             the app based on this feedback, using 3 to 5 bullet points. Output only the bullet points and nothing else.\
-                 Each bullet point should contain 2-3 sentences. \n\n"
+                 Each bullet point should contain at most 2 sentences. Use bolded text for important aspects to improve readability. \n\n"
 
     for summary in summaries:
         if summary is None:

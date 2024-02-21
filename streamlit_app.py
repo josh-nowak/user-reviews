@@ -83,6 +83,7 @@ else:
     api_key = api_key_input
 
 # Function for scraping reviews
+@st.cache_data
 def get_reviews():
     reviews = app_store_reviews(
         url=app_store_url, start_date=start_date, end_date=end_date
@@ -100,7 +101,7 @@ if "stage" not in st.session_state:
     st.session_state.stage = 0
 
 def set_stage(i):
-    st.session_state.stage = i
+    st.session_state["stage"] = i
 
 # Initialize session states for the prompts
 if "prompt_positive" not in st.session_state:
@@ -116,7 +117,7 @@ st.button("Load reviews", type="primary", on_click=set_stage, args = [1])
 # DATA LOADING
 ###################
 
-if st.session_state.stage == 1:
+if st.session_state.stage > 0:
     # Load reviews if not already done
     if st.session_state.reviews is None:
         if st.session_state.use_test_data:
@@ -127,7 +128,6 @@ if st.session_state.stage == 1:
                     if start_date < end_date:
                         # Store reviews in session state
                         st.session_state.reviews = get_reviews()
-        st.toast(f"🎉 Reviews successfully loaded!")
 
     positive_reviews = st.session_state.reviews[st.session_state.reviews["rating"] > 3].sample(frac=1)
     negative_reviews = st.session_state.reviews[st.session_state.reviews["rating"] < 4].sample(frac=1)
@@ -147,18 +147,12 @@ if st.session_state.stage == 1:
         st.session_state.prompt_negative += "\n\nFor this analysis, only critical reviews have been selected. \
         Please summarize the key critical issues raised in the user feedback."
     
-    # If user provided an API key, move on to cost estimation
-    if api_key is not None:
-        set_stage(2)
-    # If user provided no API key, skip straight to analysis
-    else:
-        set_stage(3)
-
+    
 ###################
 # API COST ESTIMATE
 ###################
 
-if st.session_state.stage > 1 and api_key is not None:
+if st.session_state.stage > 0 and api_key is not None:
     
     # Estimate input token amount and API cost
     input_token_count_total = 0
@@ -198,14 +192,15 @@ if st.session_state.stage > 1 and api_key is not None:
     
     st.markdown(f"**Would you like to continue the analysis, using {token_cost_explanation} of your OpenAI API credits?**")
 
-    st.button("Yes, continue analysis", type="primary", on_click=set_stage, args=[3])
+    # PROBLEM HERE
+    st.button("Yes, continue analysis", type="primary", on_click=set_stage, args=[2])
 
 
 ###################
 # SUMMARIZATION
 ###################
         
-if st.session_state.stage == 3:
+if st.session_state.stage > 1:
     st.markdown("---")
 
     if st.session_state.reviews is None:
@@ -238,7 +233,7 @@ if st.session_state.stage == 3:
                                             api_key=api_key,
                                             model=model_name)
         st.write("The following points were highlighted by satisfied users:")
-        st.write(positive_summary)
+        st.markdown(positive_summary)
     else:
         st.write("No positive reviews (> 3 stars) were found. A summary cannot be created.")
 
@@ -253,7 +248,7 @@ if st.session_state.stage == 3:
                                             api_key=api_key,
                                             model=model_name)
         st.write("The following issues were raised by dissatisfied users:")
-        st.write(negative_summary)
+        st.markdown(negative_summary)
     else:
         st.write("No negative reviews (< 4 stars) were found. A summary cannot be created.")
 
@@ -269,6 +264,6 @@ if st.session_state.stage == 3:
                                 app_name=app_name,
                                 model=model_name)
         st.write("Based on the user feedback, consider the following product recommendations:")
-        st.write(recommendations)
+        st.markdown(recommendations)
     else:
         st.write("No reviews were found.")
