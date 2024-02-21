@@ -6,7 +6,8 @@ from src.utils import (
     build_prompt,
     get_llm_summary,
     app_data_from_url,
-    count_tokens
+    count_tokens,
+    estimate_token_cost
 )
 import datetime
 import pandas as pd
@@ -15,12 +16,10 @@ st.title("App Store Review Summary")
 
 # App selection
 app_store_url = st.text_input(
-    "**Enter your App Store URL** 📱",
+    "Enter an **App Store URL**",
     placeholder="https://apps.apple.com/...",
     value = "https://apps.apple.com/de/app/slack/id618783545"
 )
-st.write("Or choose one of the following Apps for an example:")
-
 
 # Date selection
 today = datetime.datetime.now()
@@ -40,10 +39,16 @@ st.markdown(":grey[Note: Only the last 100 reviews can be downloaded, since \
             You can further constrain this limit with the date range, \
             but not extend it.]")
 
+# Model selection
+model_name = st.radio("Select the LLM to be used for summarization",
+                    options=["gpt-3.5-turbo",
+                  "gpt-4-0125-preview"],
+                  captions=["Faster and low-cost",
+                            "More thorough and higher-cost"])
+
 # API key 
 api_key = st.text_input("Enter your OpenAI API key",
                         type="password")
-model_name = "gpt-3.5-turbo" # TODO: consider allowing the user to select this
 
 # Function for scraping reviews
 def get_reviews():
@@ -51,7 +56,6 @@ def get_reviews():
         url=app_store_url, start_date=start_date, end_date=end_date
     )
     return reviews
-
 
 # Initialize session state for reviews if it doesn't exist
 if "reviews" not in st.session_state:
@@ -85,6 +89,8 @@ if st.session_state.clicked_load:
                 if start_date < end_date:
                     # Store reviews in session state
                     st.session_state.reviews = get_reviews()
+        print("len", len(st.session_state.reviews))
+
         # Show a success message
         st.toast(f"🎉 Reviews successfully loaded!")
 
@@ -111,17 +117,15 @@ if st.session_state.clicked_load:
     # Estimate input token amount and API cost
     input_token_count_total = 0
     if st.session_state.prompt_positive is not None:
-        input_token_count_prompt_positive = count_tokens(st.session_state.prompt_positive,
-                                                        model_name=model_name)
+        input_token_count_prompt_positive = count_tokens(st.session_state.prompt_positive)
         input_token_count_total += input_token_count_prompt_positive
     
     if st.session_state.prompt_negative is not None:
-        input_token_count_prompt_negative = count_tokens(st.session_state.prompt_negative,
-                                                        model_name=model_name)
+        input_token_count_prompt_negative = count_tokens(st.session_state.prompt_negative)
         input_token_count_total += input_token_count_prompt_negative
 
-    input_token_cost = input_token_count_total * 0.0005 / 1000 # assuming gpt-3.5-turbo-0125 
-    # TODO: compute token cost based on model selection
+    input_token_cost = estimate_token_cost(token_count = input_token_count_total,
+                                           model_name = model_name)
 
     # Display cost estimation to user
     st.markdown(f"{len(st.session_state.reviews)} reviews were downloaded, resulting in\

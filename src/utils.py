@@ -49,6 +49,12 @@ def app_store_reviews(
     # Convert response to dataframe
     reviews = pd.DataFrame(app.reviews)
 
+    # Throw an error if there are no reviews
+    if len(reviews) == 0:
+        raise FileExistsError("Couldn't load reviews. Either there are no \
+                            reviews existing in the specified date range \
+                            or Apple returned a 429 error (too many requests).")
+    
     # Keep only relevant columns
     reviews = reviews.loc[:, ["date", "title", "review", "rating"]]
 
@@ -152,7 +158,16 @@ def get_llm_summary(prompt: str, api_key: str, model: str = "gpt-3.5-turbo"):
     )
     return completion.choices[0].message.content
 
-def count_tokens(prompt, model_name = "gpt-3.5-turbo"):
-    enc = tiktoken.encoding_for_model(model_name=model_name)
+def count_tokens(prompt):
+    enc = tiktoken.get_encoding("cl100k_base")
     token_count = len(enc.encode(prompt))
     return token_count
+
+def estimate_token_cost(token_count, model_name = "gpt-3.5-turbo"):
+    if model_name == "gpt-3.5-turbo":
+        cost_estimate = token_count * 0.0005 / 1000
+    elif model_name == "gpt-4-0125-preview":
+        cost_estimate = token_count * 0.01 / 1000
+    else:
+        raise ValueError(f"Model name {model_name} is unknown.")
+    return cost_estimate
