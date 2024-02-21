@@ -204,6 +204,8 @@ if st.session_state.clicked_analysis:
 
     if len(api_key_input) == 0:
         api_key = None
+    else:
+        api_key = api_key_input
 
     positive_summary = None
     if st.session_state.prompt_positive is not None:
