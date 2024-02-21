@@ -1,4 +1,4 @@
-app_store_scraper==0.3.5
+app_store_scraper @ git+https://github.com/josh-nowak/app-store-scraper
 matplotlib==3.8.3
 openai==1.12.0
 pandas==2.2.0

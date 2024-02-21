@@ -55,7 +55,8 @@ model_name = st.radio("Select the LLM to be used for summarization",
                   "gpt-4-0125-preview"],
                 # captions are only included in newer versions of streamlit
                 #   captions=["Faster and low-cost",
-                #             "More thorough and higher-cost"]) 
+                #             "More thorough and higher-cost"]
+                ) 
 
 # API key 
 api_key = st.text_input("Enter your OpenAI API key",
