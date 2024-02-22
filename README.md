@@ -6,6 +6,7 @@ This tool **summarizes user reviews** for any app in the Apple App Store using G
 
 ## Main features
 - **Retrieve reviews from any app** by entering the App Store URL
+- **Upload your own app store reviews** as a CSV file
 - Run a **free AI-generated analysis** of users' highlights, problems, and product opportunities using GPT-3.5
 - Specify **your own OpenAI API key** to generate an improved analysis with GPT-4
 - Get an **API cost estimation** before running the analysis when using your own API key
