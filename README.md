@@ -11,8 +11,8 @@ This tool **summarizes user reviews** for any app in the Apple App Store using G
 - Specify **your own OpenAI API key** to generate an improved analysis with GPT-4
 - Get an **API cost estimation** before running the analysis when using your own API key
 
-## Preview screenshot
-![App preview screenshot](assets/app_preview.png)
+## Preview 
+![](assets/app_demo.webm)
 
 ## Local installation
 If you want to run the streamlit app locally, create an environment with Python version `3.10.0` and install the requirements from your terminal:
