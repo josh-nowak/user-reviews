@@ -12,7 +12,7 @@ This tool **summarizes user reviews** for any app in the Apple App Store using G
 - Get an **API cost estimation** before running the analysis when using your own API key
 
 ## Preview 
-![](assets/app_demo.webm)
+![](assets/app_demo_recording.gif)
 
 ## Local installation
 If you want to run the streamlit app locally, create an environment with Python version `3.10.0` and install the requirements from your terminal:
