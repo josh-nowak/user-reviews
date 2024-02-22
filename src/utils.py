@@ -2,11 +2,7 @@ import pandas as pd
 import re
 from app_store_scraper import AppStore
 from datetime import datetime
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
 import io
-from PIL import Image
-import plotly.express as px
 from openai import OpenAI
 import tiktoken
 import threading
@@ -124,62 +120,6 @@ def app_store_reviews_with_timeout(url: str, n_last_reviews: int = 100, start_da
     reviews = reviews.sort_values(by="date", ascending=False)
 
     return reviews
-
-
-# Function to generate and display word cloud
-def generate_wordcloud(data):
-    # Combine all reviews into a single string
-    text = " ".join(review for review in data["review"].astype(str))
-
-    # Create and generate a word cloud image with transparent background
-    wordcloud = WordCloud(background_color=None, mode="RGBA").generate(text)
-
-    # Use plt to create a figure
-    plt.figure(figsize=(10, 6))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-
-    # Save plt figure to a bytes buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png", transparent=True)
-    buf.seek(0)
-
-    # Use PIL to open the bytes buffer as an Image, and then display it in Streamlit
-    image = Image.open(buf)
-
-    return image
-
-
-def create_rating_distribution_plot(reviews):
-    # Count the occurrences of each rating
-    rating_counts = reviews["rating"].value_counts().reset_index()
-    rating_counts.columns = ["rating", "count"]
-
-    # Ensure we have all ratings from 1 to 5, even if some are missing in the data
-    all_ratings = pd.DataFrame({"rating": range(1, 6)})
-    rating_counts = pd.merge(
-        all_ratings, rating_counts, on="rating", how="left"
-    ).fillna(0)
-
-    # Create a bar plot with white bars
-    fig = px.bar(
-        rating_counts,
-        x="rating",
-        y="count",
-        labels={"count": "Count", "rating": "Rating"},  # Customizing axis labels
-        color_discrete_sequence=["white"] * len(rating_counts),
-    )  # Making bars white
-
-    # Update layout for aesthetics
-    fig.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)",  # Transparent plot background
-        paper_bgcolor="rgba(0,0,0,0)",  # Transparent paper background
-        font=dict(size=12, color="Yellow"),  # Update font style and color
-        # title_font=dict(size=20, color="Yellow"),  # Update title font style and color
-    )
-
-    return fig
-
 
 def build_prompt(reviews=None):
 
