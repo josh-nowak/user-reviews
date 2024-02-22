@@ -66,12 +66,12 @@ if "App Store" in data_source:
     default_start_date = datetime.date(today.year, 1, 1)
     date_range = st.date_input(
         "Set a **date range** for reviews to include in the analysis",
-        value=(default_start_date, today),
+        value=(today - datetime.timedelta(days=7), today),
         max_value=today,
         format="DD.MM.YYYY",  # not included in older streamlit versions
         help="A maximum of 100 reviews will be downloaded in order \
                 to prevent excessive scraping. \
-                You can further constrain this limit with the date range, \
+                You can further constrain the amount with the date range, \
                 but not extend it.",
     )
     start_date = date_range[0].strftime("%Y-%m-%d")
