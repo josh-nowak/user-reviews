@@ -88,16 +88,22 @@ elif "Upload" in data_source:
 
     st.info(
         """
-**Your file with app store reviews should be in .csv format and contain the following columns:**  
+**Your file with app store reviews should be in .csv format and contain the following columns**:  
 - `title`: The review's title text
 - `review`: The review's content text
 - `rating`: The review's star rating (a number in the range of 1—5)   
 
-Other columns can be present but will be ignored.
+Other columns can be present but will be ignored. If you upload more than 500 reviews, only a random sample of 500 reviews will be used.
                 """
     )
 
     uploaded_file = st.file_uploader("Upload your **.csv file** here")
+
+    st.warning(
+        """
+**You need to provide an OpenAI API key** when using your own data, because the amount of tokens can become quite high. Enter your API key in the advanced settings below.
+"""
+    )
 
 
 ##############################
@@ -118,9 +124,10 @@ elif st.session_state.data_source == "demo":
     st.session_state.app_store_url = demo_url
 elif st.session_state.data_source == "upload":
     st.session_state.app_store_url = None
+    
 
 # Model selection
-with st.expander("Advanced options"):
+with st.expander("Advanced settings"):
     model_name = st.radio(
         "Select a **model** to be used for summarization",
         options=["gpt-3.5-turbo", "gpt-4-0125-preview"],
@@ -185,6 +192,12 @@ st.button("Load reviews", type="primary", on_click=set_stage, args=[1])
 
 if st.session_state.stage > 0:
 
+    # Catch missing API key when using own data
+    if api_key is None and st.session_state.data_source == "upload":
+        raise ValueError(
+            "An API key is required when using your own data. Please enter your API key in the advanced settings."
+        )
+
     # Load reviews if not already done
     if st.session_state.reviews is None:
 
@@ -212,6 +225,16 @@ if st.session_state.stage > 0:
                     raise ValueError(
                         'The uploaded file does not contain the required columns "title", "review", and "rating".'
                     )
+                
+                # If the file is larger than 500 rows, only use a random sample of 500 rows
+                if len(st.session_state.reviews) > 500:
+                    st.session_state.reviews = st.session_state.reviews.sample(500)
+
+                    # Warn the user about the sample
+                    st.warning(
+                        "The uploaded file contains more than 500 reviews. A random sample of 500 reviews will be used for the analysis."
+                    )
+
             else:
                 raise FileNotFoundError(
                     "A review file could not be found. Please reload the page and try uploading your file again."
